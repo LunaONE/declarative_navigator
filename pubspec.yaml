@@ -1,6 +1,6 @@
 name: declarative_navigator
 description: "Fully declarative, state-driven routing for Flutter's Navigator 2.0. Makes routing as simple as widgets!"
-version: 0.0.2
+version: 0.0.3
 repository: https://github.com/LunaONE/declarative_navigator
 
 environment:

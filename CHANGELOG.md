@@ -1,3 +1,8 @@
+## 0.0.3
+
+- Add guard against `Navigator.pop` being used on modal declarative routes
+- Fix lint warning
+
 ## 0.0.2
 
 * Adds supports for automatic back buttons or not depending on whether a `pop` function is provided on the `DeclarativePage`
