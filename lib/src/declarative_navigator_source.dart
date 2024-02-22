@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 abstract class DeclarativeNavigatorSource extends ChangeNotifier {
   List<DeclarativePage> build();
@@ -12,18 +11,37 @@ abstract class DeclarativeNavigatorSource extends ChangeNotifier {
 }
 
 class DeclarativePage extends Page<dynamic> {
-  const DeclarativePage({
+  DeclarativePage({
     super.key,
     required this.child,
-    required this.pop,
-  });
+    required VoidCallback? pop,
+    this.maintainState = true,
+  }) {
+    if (pop != null) {
+      var popCalled = false;
+      this.pop = () {
+        assert(!popCalled, '`pop` should only be called once per page');
+
+        if (popCalled) {
+          return;
+        }
+
+        popCalled = true;
+        pop();
+      };
+    } else {
+      this.pop = null;
+    }
+  }
 
   final Widget child;
 
   // TODO(tp): Alternatively support `ValueListenable<VoidCallback?>`, so this can be updated at runtime
   //           Though should this be settable from the outside or by the page itself (builder pattern)?
   //           Would be cool if this could be declaratively changed from the outside after the initial render.
-  final VoidCallback? pop;
+  late final VoidCallback? pop;
+
+  final bool maintainState;
 
   @override
   Route createRoute(BuildContext context) {
@@ -36,7 +54,8 @@ class DeclarativePage extends Page<dynamic> {
   }
 }
 
-class DeclarativeRoute extends PageRoute<dynamic> {
+class DeclarativeRoute extends PageRoute<dynamic>
+    with MaterialRouteTransitionMixin {
   @visibleForTesting
   DeclarativeRoute(DeclarativePage page)
       : super(
@@ -44,6 +63,8 @@ class DeclarativeRoute extends PageRoute<dynamic> {
           // as well as needed to update the page with a new child in case of "in place" updates
           settings: page,
         );
+
+  bool _popInvoked = false;
 
   DeclarativePage get page => settings as DeclarativePage;
 
@@ -58,9 +79,7 @@ class DeclarativeRoute extends PageRoute<dynamic> {
   // If `true` (thus `pop` is `null`) this tells the system to not allow edge swipe/Android back button
   // TODO(tp): Check the animation: Is this always from the bottom then, and could we block the popping without changing the style?
   @override
-  bool get fullscreenDialog {
-    return !canPop;
-  }
+  bool get fullscreenDialog => !canPop;
 
   @override
   bool get canPop {
@@ -68,40 +87,31 @@ class DeclarativeRoute extends PageRoute<dynamic> {
   }
 
   @override
-  Future<RoutePopDisposition> willPop() async {
-    return canPop ? RoutePopDisposition.pop : RoutePopDisposition.doNotPop;
-  }
-
-  @override
-  // NOTE(tp): This is called when the route has been popped by the "system", e.g. iOS edge swipe or Android back button
   bool didPop(dynamic result) {
-    pop!.call();
+    if (!_popInvoked) {
+      // If pop was already invoked, the state will already be updated and we must not call `pop` again
+      pop?.call();
+    }
 
     return super.didPop(result);
   }
 
   @override
-  Color? get barrierColor => null;
+  bool get maintainState => page.maintainState;
 
   @override
-  String? get barrierLabel => null;
+  bool get impliesAppBarDismissal => canPop;
 
   @override
-  Widget buildPage(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-  ) {
-    return Semantics(
-      scopesRoute: true,
-      explicitChildNodes: true,
-      child: child,
+  Widget buildContent(BuildContext context) {
+    return PopScope(
+      canPop: canPop,
+      onPopInvoked: (didPop) {
+        if (didPop) {
+          _popInvoked = true;
+        }
+      },
+      child: page.child,
     );
   }
-
-  @override
-  bool get maintainState => true;
-
-  @override
-  Duration get transitionDuration => Duration.zero;
 }

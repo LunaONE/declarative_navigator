@@ -3,6 +3,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class MainAppNavigator extends StatefulNavigator {
+  MainAppNavigator({
+    required this.close,
+  });
+
+  final VoidCallback close;
+
   bool loggedIn = false;
 
   @override
@@ -18,6 +24,7 @@ class MainAppNavigator extends StatefulNavigator {
         DeclarativePage(
           child: _LoginPage(
             onLoggedIn: () => setState(() => loggedIn = true),
+            close: close,
           ),
           pop: null,
         ),
@@ -49,7 +56,7 @@ class _LoggedInNavigator extends StatefulNavigator {
       ],
       showsFoodSelection
           ? () => _FoodsNavigator(
-                () => setState(() => showsFoodSelection = false),
+                close: () => setState(() => showsFoodSelection = false),
               )
           : null,
     );
@@ -59,15 +66,21 @@ class _LoggedInNavigator extends StatefulNavigator {
 class _LoginPage extends StatelessWidget {
   const _LoginPage({
     required this.onLoggedIn,
+    this.close,
   });
 
   final VoidCallback onLoggedIn;
+  final VoidCallback? close;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Logged-out'),
+        actions: [
+          if (close != null)
+            IconButton(onPressed: close, icon: const Icon(Icons.close))
+        ],
       ),
       body: Container(
         alignment: Alignment.center,
@@ -125,7 +138,9 @@ enum Food {
 class _FoodsNavigator extends MappedNavigator<Food?> {
   final VoidCallback close;
 
-  _FoodsNavigator(this.close);
+  _FoodsNavigator({
+    required this.close,
+  });
 
   // TODO(tp): Set via constructor, who handles dispose?
   final _source = ValueNotifier<Food?>(null);

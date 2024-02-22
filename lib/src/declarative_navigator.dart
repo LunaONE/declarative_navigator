@@ -14,8 +14,10 @@ class DeclarativeNavigatorDisplay extends StatelessWidget {
     return AnimatedBuilder(
       animation: root,
       builder: (context, _) {
+        final pages = root.build();
+
         return Navigator(
-          pages: root.build(),
+          pages: pages,
           onPopPage: (route, result) {
             return route.didPop(result);
           },
