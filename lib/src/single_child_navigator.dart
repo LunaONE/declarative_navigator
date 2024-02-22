@@ -102,7 +102,7 @@ class ChildNavigatorDescription<T extends DeclarativeNavigatorSource> {
   int get hashCode => parameters.hashCode;
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return (other is ChildNavigatorDescription &&
         other.factory.runtimeType == factory.runtimeType &&
         other.parameters.length == parameters.length &&
