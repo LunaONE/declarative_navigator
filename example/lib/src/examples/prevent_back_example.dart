@@ -13,17 +13,24 @@ class MainAppNavigator extends StatefulNavigator {
 
   final VoidCallback close;
 
+  @override
+  DeclarativeNavigatorState<StatefulNavigator> createState() =>
+      _MainAppNavigatorState();
+}
+
+class _MainAppNavigatorState
+    extends DeclarativeNavigatorState<MainAppNavigator> {
   Child? _child;
 
   @override
-  NavigatorDescription describe() {
+  List<DeclarativeNavigatable> build() {
     final child = _child;
 
-    return pages([
+    return [
       DeclarativePage(
         child: _FirstPage(
           setChild: (child) => setState(() => _child = child),
-          close: close,
+          close: navigator.close,
         ),
         pop: null,
       ),
@@ -45,7 +52,7 @@ class MainAppNavigator extends StatefulNavigator {
               pop: null,
             ),
         }
-    ]);
+    ];
   }
 
   void _closeChild() {

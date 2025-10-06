@@ -9,57 +9,65 @@ class MainAppNavigator extends StatefulNavigator {
 
   final VoidCallback close;
 
+  @override
+  DeclarativeNavigatorState<StatefulNavigator> createState() =>
+      MainAppNavigatorState();
+}
+
+class MainAppNavigatorState
+    extends DeclarativeNavigatorState<MainAppNavigator> {
   bool loggedIn = false;
 
   @override
-  NavigatorDescription describe() {
-    if (loggedIn) {
-      return child(
-        () => _LoggedInNavigator(
+  List<DeclarativeNavigatable> build() {
+    return [
+      if (loggedIn)
+        _LoggedInNavigator(
           logout: () => setState(() => loggedIn = false),
-        ),
-      );
-    } else {
-      return pages([
+        )
+      else
         DeclarativePage(
           child: _LoginPage(
             onLoggedIn: () => setState(() => loggedIn = true),
-            close: close,
+            close: navigator.close,
           ),
           pop: null,
         ),
-      ]);
-    }
+    ];
   }
 }
 
 class _LoggedInNavigator extends StatefulNavigator {
   final VoidCallback logout;
 
-  bool showsFoodSelection = false;
-
   _LoggedInNavigator({
     required this.logout,
   });
 
   @override
-  NavigatorDescription describe() {
-    return pagesWithChild(
-      [
-        DeclarativePage(
-          child: _HomePage(
-            onLogOut: logout,
-            onShowChild: () => setState(() => showsFoodSelection = true),
-          ),
-          pop: null,
+  DeclarativeNavigatorState<StatefulNavigator> createState() =>
+      _LoggedInNavigatorState();
+}
+
+class _LoggedInNavigatorState
+    extends DeclarativeNavigatorState<_LoggedInNavigator> {
+  bool showsFoodSelection = false;
+
+  @override
+  List<DeclarativeNavigatable> build() {
+    return [
+      DeclarativePage(
+        child: _HomePage(
+          onLogOut: navigator.logout,
+          onShowChild: () => setState(() => showsFoodSelection = true),
         ),
-      ],
-      showsFoodSelection
-          ? () => _FoodsNavigator(
-                close: () => setState(() => showsFoodSelection = false),
-              )
-          : null,
-    );
+        pop: null,
+      ),
+      if (showsFoodSelection)
+        _FoodsNavigator(
+          close: () => setState(() => showsFoodSelection = false),
+        ),
+    ];
   }
 }
 
@@ -135,36 +143,39 @@ enum Food {
   pasta,
 }
 
-class _FoodsNavigator extends MappedNavigator<Food?> {
+class _FoodsNavigator extends StatefulNavigator {
   final VoidCallback close;
 
   _FoodsNavigator({
     required this.close,
   });
 
-  // TODO(tp): Set via constructor, who handles dispose?
-  final _source = ValueNotifier<Food?>(null);
+  @override
+  DeclarativeNavigatorState<StatefulNavigator> createState() =>
+      _FoodsNavigatorState();
+}
+
+class _FoodsNavigatorState extends DeclarativeNavigatorState<_FoodsNavigator> {
+  Food? _selectedFood;
 
   @override
-  get source => _source;
-
-  @override
-  NavigatorDescription map(Food? selectedFood) {
-    return pages([
+  List<DeclarativeNavigatable> build() {
+    final selectedFood = _selectedFood;
+    return [
       DeclarativePage(
         child: _FoodSelection(
-          onFoodSelect: (f) => _source.value = f,
+          onFoodSelect: (f) => setState(() => _selectedFood = f),
         ),
-        pop: close,
+        pop: navigator.close,
       ),
       if (selectedFood != null)
         DeclarativePage(
           child: _DetailPage(
             food: selectedFood,
           ),
-          pop: () => _source.value = null,
+          pop: () => setState(() => _selectedFood = null),
         ),
-    ]);
+    ];
   }
 }
 

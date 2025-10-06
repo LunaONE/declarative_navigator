@@ -1,4 +1,6 @@
 import 'package:declarative_navigator/declarative_navigator.dart';
+import 'package:example/src/examples/hot_reload_example.dart'
+    as hot_reload_example;
 import 'package:example/src/examples/login_example.dart' as login_example;
 import 'package:example/src/examples/prevent_back_example.dart'
     as prevent_back_example;
@@ -34,7 +36,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  DeclarativeNavigatorSource? rootNavigator;
+  DeclarativeNavigatable? rootNavigator;
 
   @override
   Widget build(BuildContext context) {
@@ -48,11 +50,14 @@ class _HomeState extends State<Home> {
   }
 
   Widget get _exampleSelection {
-    final examples = <String, DeclarativeNavigatorSource Function()>{
+    final examples = <String, DeclarativeNavigatable Function()>{
       'Login/Logout + Child Navigator': () => login_example.MainAppNavigator(
             close: _closeExample,
           ),
       'Prevent system back': () => prevent_back_example.MainAppNavigator(
+            close: _closeExample,
+          ),
+      'Hot reload': () => hot_reload_example.MainAppNavigator(
             close: _closeExample,
           ),
     };
@@ -80,8 +85,6 @@ class _HomeState extends State<Home> {
 
   void _closeExample() {
     setState(() {
-      rootNavigator?.dispose();
-
       rootNavigator = null;
     });
   }

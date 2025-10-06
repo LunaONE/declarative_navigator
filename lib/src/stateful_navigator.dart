@@ -1,13 +1,19 @@
 import 'package:declarative_navigator/declarative_navigator.dart';
 import 'package:flutter/material.dart';
 
+/// Hierarchy:
+/// - [DeclarativeNavigatable]
+///   - [PageDeclarativeNavigatable]
+///   - [ElementDeclarativeNavigatable]
+///     - [StatelessNavigator]
+///     - [StatefulNavigator]
 sealed class DeclarativeNavigatable {}
 
 abstract class PageDeclarativeNavigatable implements DeclarativeNavigatable {
   DeclarativePage build();
 }
 
-abstract class ElementDeclarativeNavigatable implements DeclarativeNavigatable {
+sealed class ElementDeclarativeNavigatable implements DeclarativeNavigatable {
   NavigatorElement createElement();
 }
 
@@ -18,7 +24,7 @@ abstract class StatelessNavigator implements ElementDeclarativeNavigatable {
 
   @override
   @protected
-  NavigatorElement createElement() => StatelessNavigatorElement(this);
+  StatelessNavigatorElement createElement() => StatelessNavigatorElement(this);
 
   @protected
   List<DeclarativeNavigatable> build();
@@ -31,7 +37,7 @@ abstract class StatefulNavigator implements ElementDeclarativeNavigatable {
 
   @override
   @protected
-  NavigatorElement createElement() => StatefulNavigatorElement(this);
+  StatefulNavigatorElement createElement() => StatefulNavigatorElement(this);
 
   @protected
   DeclarativeNavigatorState createState();
@@ -40,9 +46,7 @@ abstract class StatefulNavigator implements ElementDeclarativeNavigatable {
 abstract class DeclarativeNavigatorState<T extends StatefulNavigator> {
   late T navigator;
 
-  // T? _navigator;
-
-  late NavigatorElement element;
+  late StatefulNavigatorElement element;
 
   @protected
   void setState(void Function() fn) {
@@ -69,7 +73,9 @@ abstract class DeclarativeNavigatorState<T extends StatefulNavigator> {
   void dispose() {}
 }
 
-abstract class NavigatorElement extends ChangeNotifier {
+abstract class NavigatorElement<T> extends ChangeNotifier {
+  void update(T navigator);
+
   List<DeclarativeNavigatable> build();
 
   @override
@@ -77,7 +83,7 @@ abstract class NavigatorElement extends ChangeNotifier {
 }
 
 class StatefulNavigatorElement<T extends StatefulNavigator>
-    extends ChangeNotifier implements NavigatorElement {
+    extends ChangeNotifier implements NavigatorElement<T> {
   StatefulNavigatorElement(T statefulNavigator);
 
   // DeclarativeNavigatorState<StatefulNavigator> get state => _state!;
@@ -88,6 +94,7 @@ class StatefulNavigatorElement<T extends StatefulNavigator>
 
   // TODO: Diff in old element
 
+  @override
   void update(T newNavigator) {
     final oldNavigator = state!.navigator as T;
 
@@ -111,14 +118,19 @@ class StatefulNavigatorElement<T extends StatefulNavigator>
 }
 
 class StatelessNavigatorElement<T extends StatelessNavigator>
-    implements NavigatorElement {
-  StatelessNavigatorElement(this.navigator);
+    implements NavigatorElement<T> {
+  StatelessNavigatorElement(this._navigator);
 
-  final T navigator;
+  T _navigator;
+
+  @override
+  void update(T navigator) {
+    _navigator = navigator;
+  }
 
   @override
   List<DeclarativeNavigatable> build() {
-    return navigator.build();
+    return _navigator.build();
   }
 
   @override

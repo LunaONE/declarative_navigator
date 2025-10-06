@@ -177,6 +177,88 @@ void main() {
     ]);
     methodCalls.clear();
   });
+
+  testWidgets(
+      '$DeclarativeNavigatorDisplay: $StatefulNavigator being updated (by parameter) to show a different child navigator',
+      (tester) async {
+    Widget app({bool mountAlternateChildNavigator = false}) {
+      return MaterialApp(
+        home: DeclarativeNavigatorDisplay(
+          root: _TestStatefulNavigatorWithSwitchingChildNavigator(
+            mountAlternateChildNavigator: mountAlternateChildNavigator,
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(app());
+    expect(find.text('Page "First" render #1'), findsOneWidget);
+    expect(methodCalls, [
+      '_TestStatefulNavigatorWithSwitchingChildNavigatorState()',
+      '_TestStatefulNavigatorWithSwitchingChildNavigatorState[navigator.mountAlternateChildNavigator: false].build()',
+      '_TestStatefulNavigatorWithPagesState[showSecondPage: false]()',
+      '_TestStatefulNavigatorWithPagesState[showSecondPage: false].build()',
+      '_TestPage[name: First].build()',
+      '_TestPage[name: First].createRoute()'
+    ]);
+    methodCalls.clear();
+
+    await tester.pumpWidget(app(mountAlternateChildNavigator: true));
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('main.png'));
+    // expect(find.text('Page "First" render #1').hitTestable(), findsOneWidget);
+    // TODO: This renders "#2", but the child pages should be cleared
+    // expect(find.text('Page "First" render #1'), findsOneWidget);
+    expect(methodCalls, [
+      '_TestStatefulNavigatorWithSwitchingChildNavigatorState[navigator.mountAlternateChildNavigator: true].build()',
+      '_AlternateTestStatefulNavigatorWithPages()',
+      '_TestStatefulNavigatorWithPagesState[showSecondPage: false].dispose()',
+      '_AlternateTestStatefulNavigatorWithPagesState[showSecondPage: false]()',
+      '_AlternateTestStatefulNavigatorWithPagesState[showSecondPage: false].build()',
+      '_TestPage[name: First].build()' // TODO: route should be recreated
+    ]);
+    methodCalls.clear();
+
+    /// Unmount, should dispose
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(methodCalls, [
+      // TODO(tp): This should call dispose
+    ]);
+    methodCalls.clear();
+
+    // // Trigger action to show child navigator with first page
+    // await tester.tap(find.text('Action "Entry page"'));
+    // await tester.pumpAndSettle();
+    // // await expectLater(find.byType(MaterialApp), matchesGoldenFile('main.png'));
+    // expect(find.text('Page "First" render #1').hitTestable(), findsOneWidget);
+    // expect(methodCalls, [
+    //   '_TestStatefulNavigatorWithChildNavigatorState[mountChildNavigator: true].build()',
+    //   '_TestPage[name: Entry page (behind)].build()',
+    //   '_TestStatefulNavigatorWithPagesState[showSecondPage: false]()',
+    //   '_TestStatefulNavigatorWithPagesState[showSecondPage: false].build()',
+    //   '_TestPage[name: First].build()',
+    //   '_TestPage[name: First].createRoute()',
+    // ]);
+    // methodCalls.clear();
+
+    // await tester.tap(find.text('Action "First"'));
+    // await tester.pumpAndSettle();
+    // // await expectLater(find.byType(MaterialApp), matchesGoldenFile('main.png'));
+    // // expect(find.text('Page "Second" render #1').hitTestable(), findsOneWidget);
+    // expect(methodCalls, [
+    //   // Could we optimize this out, as we already rebuild higher up? Or better to not call the higher up and just modify the pages (instead of a full rebuild)
+    //   '_TestStatefulNavigatorWithPagesState[showSecondPage: true].build()',
+    //   '_TestPage[name: First (behind)].build()',
+    //   '_TestPage[name: Second].build()',
+    //   '_TestStatefulNavigatorWithChildNavigatorState[mountChildNavigator: true].build()',
+    //   '_TestPage[name: Entry page (behind)].build()',
+    //   '_TestStatefulNavigatorWithPagesState[showSecondPage: true].build()',
+    //   '_TestPage[name: First (behind)].build()',
+    //   '_TestPage[name: Second].build()',
+    //   '_TestPage[name: Second].createRoute()',
+    // ]);
+    // methodCalls.clear();
+  });
 }
 
 class _TestPageWidget extends StatefulWidget {
@@ -307,6 +389,13 @@ class _TestStatefulNavigatorWithPagesState
   }
 
   @override
+  void dispose() {
+    methodCalls.add('$this.dispose()');
+
+    super.dispose();
+  }
+
+  @override
   String toString() {
     return '_TestStatefulNavigatorWithPagesState[showSecondPage: $showSecondPage]';
   }
@@ -346,5 +435,65 @@ class _TestStatefulNavigatorWithChildNavigatorState
   @override
   String toString() {
     return '_TestStatefulNavigatorWithChildNavigatorState[mountChildNavigator: $mountChildNavigator]';
+  }
+}
+
+/// Uses a new runtime type, and thus will cause not be updated from [_TestStatefulNavigatorWithPages], but rather created anew
+class _AlternateTestStatefulNavigatorWithPages
+    extends _TestStatefulNavigatorWithPages {
+  _AlternateTestStatefulNavigatorWithPages() {
+    // NOTE(tp): Can't use `$this` for the name, as the `navigator` property is not yet set
+    methodCalls.add('$_AlternateTestStatefulNavigatorWithPages()');
+  }
+
+  @override
+  DeclarativeNavigatorState<_TestStatefulNavigatorWithPages> createState() =>
+      _AlternateTestStatefulNavigatorWithPagesState();
+}
+
+class _AlternateTestStatefulNavigatorWithPagesState
+    extends _TestStatefulNavigatorWithPagesState {
+  @override
+  String toString() {
+    return '_AlternateTestStatefulNavigatorWithPagesState[showSecondPage: $showSecondPage]';
+  }
+}
+
+class _TestStatefulNavigatorWithSwitchingChildNavigator
+    extends StatefulNavigator {
+  _TestStatefulNavigatorWithSwitchingChildNavigator({
+    super.key,
+    required this.mountAlternateChildNavigator,
+  });
+
+  final bool mountAlternateChildNavigator;
+
+  @override
+  DeclarativeNavigatorState<_TestStatefulNavigatorWithSwitchingChildNavigator>
+      createState() => _TestStatefulNavigatorWithSwitchingChildNavigatorState();
+}
+
+class _TestStatefulNavigatorWithSwitchingChildNavigatorState
+    extends DeclarativeNavigatorState<
+        _TestStatefulNavigatorWithSwitchingChildNavigator> {
+  _TestStatefulNavigatorWithSwitchingChildNavigatorState() {
+    // NOTE(tp): Can't use `$this` for the name, as the `navigator` property is not yet set
+    methodCalls
+        .add('$_TestStatefulNavigatorWithSwitchingChildNavigatorState()');
+  }
+
+  @override
+  List<DeclarativeNavigatable> build() {
+    methodCalls.add('$this.build()');
+    return [
+      navigator.mountAlternateChildNavigator
+          ? _AlternateTestStatefulNavigatorWithPages()
+          : _TestStatefulNavigatorWithPages(),
+    ];
+  }
+
+  @override
+  String toString() {
+    return '_TestStatefulNavigatorWithSwitchingChildNavigatorState[navigator.mountAlternateChildNavigator: ${navigator.mountAlternateChildNavigator}]';
   }
 }

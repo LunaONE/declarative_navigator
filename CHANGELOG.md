@@ -1,7 +1,8 @@
-## 0.0.4
+## 0.1.0
 
 * Add `Stateless`-/`StatefulNavigator`, mimicking Flutter's `Stateless`-/`StatefulWidget` types.
   * This allows for a more dynamic parent/child relationship (e.g. can have multiple `Navigator` children, with the lifecycle managed by the library), at the expense of not having as easy a way to access the child from the parent (e.g. not single `Navigator? child` property to work with).
+* Support hot reload
 * Bump minimum Flutter and Dart version
 
 ## 0.0.3
