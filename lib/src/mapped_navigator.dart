@@ -1,38 +1,38 @@
-import 'package:declarative_navigator/declarative_navigator.dart';
-import 'package:flutter/foundation.dart';
+// import 'package:declarative_navigator/declarative_navigator.dart';
+// import 'package:flutter/foundation.dart';
 
-abstract class MappedNavigator<T> extends SingleChildNavigator {
-  @protected
-  ValueListenable<T> get source;
+// abstract class MappedNavigator<T> extends  {
+//   @protected
+//   ValueListenable<T> get source;
 
-  late final VoidCallback removeSourceListener;
+//   late final VoidCallback removeSourceListener;
 
-  late NavigatorDescription _desc;
+//   late NavigatorDescription _desc;
 
-  MappedNavigator() {
-    // TODO(tp): How to handle hot-reload? Special listener, or rather re-evaluate `map` on global rebuilds?
-    void handleUpdate() {
-      _desc = map(source.value);
+//   MappedNavigator() {
+//     // TODO(tp): How to handle hot-reload? Special listener, or rather re-evaluate `map` on global rebuilds?
+//     void handleUpdate() {
+//       _desc = map(source.value);
 
-      notifyListeners();
-    }
+//       // notifyListeners();
+//     }
 
-    source.addListener(handleUpdate);
-    handleUpdate();
-    removeSourceListener = () => source.removeListener(handleUpdate);
-  }
+//     source.addListener(handleUpdate);
+//     handleUpdate();
+//     removeSourceListener = () => source.removeListener(handleUpdate);
+//   }
 
-  NavigatorDescription map(T value);
+//   NavigatorDescription map(T value);
 
-  @override
-  NavigatorDescription describe() {
-    return _desc;
-  }
+//   @override
+//   NavigatorDescription describe() {
+//     return _desc;
+//   }
 
-  @override
-  void dispose() {
-    removeSourceListener();
+//   @override
+//   void dispose() {
+//     removeSourceListener();
 
-    super.dispose();
-  }
-}
+//     super.dispose();
+//   }
+// }

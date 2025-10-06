@@ -1,23 +1,51 @@
 import 'package:declarative_navigator/declarative_navigator.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
-class DeclarativeNavigatorDisplay extends StatelessWidget {
+class DeclarativeNavigatorDisplay extends StatefulWidget {
   const DeclarativeNavigatorDisplay({
     super.key,
     required this.root,
   });
 
-  final DeclarativeNavigatorSource root;
+  final DeclarativeNavigatable root;
+
+  @override
+  State<DeclarativeNavigatorDisplay> createState() =>
+      _DeclarativeNavigatorDisplayState();
+}
+
+class _DeclarativeNavigatorDisplayState
+    extends State<DeclarativeNavigatorDisplay> {
+  late final DeclarativeNavigatorSourceImpl _root;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _root = DeclarativeNavigatorSourceImpl(widget.root);
+  }
+
+  @override
+  void didUpdateWidget(covariant DeclarativeNavigatorDisplay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    _root.didUpdateNavigatable(widget.root);
+  }
 
   @override
   Widget build(BuildContext context) {
+    // print('decl: bnuilding ${_root.pages}');
+    // print('decl: bnuilding ${(_root.pages.last.child as Scaffold).body}');
+
     return AnimatedBuilder(
-      animation: root,
+      animation: _root,
       builder: (context, _) {
-        final pages = root.build();
+        print(
+          '\n\nDeclarativeNavigatorDisplay: Building animated builder ${_root.pages}',
+        );
 
         return _Navigator(
-          pages: pages,
+          pages: _root.pages,
           onPopPage: (route, result) {
             return route.didPop(result);
           },
